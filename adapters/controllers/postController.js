@@ -3,7 +3,7 @@ import countAll from '../../application/use_cases/post/countAll';
 import addPost from '../../application/use_cases/post/add';
 import findById from '../../application/use_cases/post/findById';
 import updateById from '../../application/use_cases/post/updateById';
-import deletePost from '../../application/use_cases/post/deleteΒyId';
+import deletePost from '../../application/use_cases/post/deleteById';
 
 export default function postController(
   postDbRepository,
@@ -90,7 +90,11 @@ export default function postController(
 
   const deletePostById = (req, res, next) => {
     deletePost(req.params.id, dbRepository)
-      .then(() => res.json('post sucessfully deleted!'))
+      .then(() => {
+        // Matches redisCachingMiddleware list key (`posts` + `_` + '') so GET /posts is not stale.
+        cachingRepository.deleteCacheKey('posts_');
+        return res.json('post successfully deleted!');
+      })
       .catch((error) => next(error));
   };
 

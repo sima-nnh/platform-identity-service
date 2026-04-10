@@ -4,6 +4,9 @@ A use case of Clean Architecture in Node.js comprising of Express.js, MongoDB an
 ### Overview
 This example is a simple RESTful API application in which a user can create / update / delete / find a post, by using the *Clean Architecture*.
 
+### Clarifying use case boundaries
+HTTP controllers in the adapters layer should call application use cases only; they must not reach into entities or infrastructure directly. That keeps **use case boundaries** visible and preserves the dependency rule described below.
+
 The objective of *Clean Architecture* by [Robert C. Martin] is the separation of concerns in software. 
 This separation is achieved by dividing the software into layers. Each layer is encapsulated by a higher level layer and the way to communicate between the layers is with the *Dependency Rule*.
 

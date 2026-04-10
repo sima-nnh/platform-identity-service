@@ -4,6 +4,7 @@ import addPost from '../../application/use_cases/post/add';
 import findById from '../../application/use_cases/post/findById';
 import updateById from '../../application/use_cases/post/updateById';
 import deletePost from '../../application/use_cases/post/deleteById';
+import clampPageParams from '../../src/utils/clampPageParams';
 
 export default function postController(
   postDbRepository,
@@ -28,10 +29,9 @@ export default function postController(
         params[key] = req.query[key];
       }
     }
-    // predefined query params (apart from dynamically) for pagination
-    // and current logged in user
-    params.page = params.page ? parseInt(params.page, 10) : 1;
-    params.perPage = params.perPage ? parseInt(params.perPage, 10) : 10;
+    const { page, perPage } = clampPageParams(params.page, params.perPage);
+    params.page = page;
+    params.perPage = perPage;
     params.userId = req.user.id;
 
     findAll(params, dbRepository)
@@ -67,21 +67,22 @@ export default function postController(
   };
 
   const addNewPost = (req, res, next) => {
-    const { title, description } = req.body;
+    const { title, description, tags } = req.body;
 
     addPost({
       title,
       description,
+      tags,
       userId: req.user.id,
       postRepository: dbRepository
     })
-      .then((post) => {
+      .then((created) => {
+        cachingRepository.deleteCacheKey('posts_');
         const cachingOptions = {
           key: 'posts_',
           expireTimeSec: 30,
-          data: JSON.stringify(post)
+          data: JSON.stringify(created)
         };
-        // cache the result to redis
         cachingRepository.setCache(cachingOptions);
         return res.json('post added');
       })
@@ -99,7 +100,7 @@ export default function postController(
   };
 
   const updatePostById = (req, res, next) => {
-    const { title, description, isPublished } = req.body;
+    const { title, description, isPublished, tags } = req.body;
 
     updateById({
       id: req.params.id,
@@ -107,9 +108,13 @@ export default function postController(
       description,
       userId: req.user.id,
       isPublished,
+      tags,
       postRepository: dbRepository
     })
-      .then((message) => res.json(message))
+      .then((message) => {
+        cachingRepository.deleteCacheKey('posts_');
+        return res.json(message);
+      })
       .catch((error) => next(error));
   };
 

@@ -13,6 +13,7 @@ export default function postController(
   postCachingRepositoryImpl
 ) {
   const dbRepository = postDbRepository(postDbRepositoryImpl());
+  // Redis-backed cache: client comes from infrastructure; repository impl lives in adapters.
   const cachingRepository = postCachingRepository(
     postCachingRepositoryImpl()(cachingClient)
   );
